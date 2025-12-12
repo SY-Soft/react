@@ -1,12 +1,15 @@
-// backend/server.js
 import express from "express";
 import cors from "cors";
 import { db } from "./db.js";
+import jwt from "jsonwebtoken";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const SECRET = "SY_SUPER_SECRET_NE_MENYAT";
+
+// ===== USERS GET =====
 app.get("/users", (req, res) => {
     db.query("SELECT * FROM users", (err, data) => {
         if (err) return res.json(err);
@@ -14,10 +17,7 @@ app.get("/users", (req, res) => {
     });
 });
 
-app.listen(8800, () => {
-    console.log("Backend server running on port 8800");
-});
-
+// ===== USERS ADD =====
 app.post("/users", (req, res) => {
     const q = "INSERT INTO users (`name`, `email`, `password`) VALUES (?)";
     const values = [req.body.name, req.body.email, req.body.pass];
@@ -28,11 +28,9 @@ app.post("/users", (req, res) => {
     });
 });
 
-import jwt from "jsonwebtoken";
-
-const SECRET = "SY_SUPER_SECRET_NE_MENYAT"; // не меняй пока, иначе себя заблокируешь
-
+// ===== LOGIN =====
 app.post("/login", (req, res) => {
+    console.log("LOGIN HIT:", req.body);
     const { email, password } = req.body;
 
     const q = "SELECT * FROM users WHERE email = ? AND password = ?";
@@ -43,7 +41,6 @@ app.post("/login", (req, res) => {
 
         const user = data[0];
 
-        // роль пусть будет "admin" если email = твоему
         const role = user.email === "yuriy@test.com" ? "admin" : "user";
 
         const token = jwt.sign(
@@ -63,4 +60,9 @@ app.post("/login", (req, res) => {
             }
         });
     });
+});
+
+// ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
+app.listen(8800, () => {
+    console.log("Backend server running on port 8800");
 });

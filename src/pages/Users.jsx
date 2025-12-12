@@ -39,12 +39,14 @@ export default function Users() {
             <div className="row fw-bold border-bottom pb-2">
                 <div className="col-4">Имя</div>
                 <div className="col-4">Email</div>
+                <div className="col-4">...</div>
             </div>
 
             {users.map((u) => (
                 <div className="row py-2 border-bottom" key={u.id}>
                     <div className="col-4">{u.name}</div>
                     <div className="col-4">{u.email}</div>
+                    <div className="col-4">SYMARK2 = Всем пусто, юзерам дизаблет edit+delete, админам edit+delete </div>
                 </div>
             ))}
         </div>

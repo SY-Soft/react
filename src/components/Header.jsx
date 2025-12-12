@@ -10,6 +10,9 @@ export default function Header() {
                     <Link className="nav-link" to="/">Главная</Link>
                     <Link className="nav-link" to="/users">Юзеры</Link>
                     <Link className="nav-link" to="/about">О нас</Link>
+                    { /* SYMARK1 */ }
+                    <Link className="nav-link" to="/login">login</Link>
+                    <Link className="nav-link" to="/logout">logout</Link>
                 </div>
             </div>
         </nav>
