@@ -7,6 +7,13 @@ export default function Users() {
     const { user } = useAuth();
     const modalRef = useRef(null); // не обязательно, но можно
     const API = import.meta.env.VITE_API || "http://localhost:8800";
+    const isAdmin = user?.role === 1;
+
+    const [modalMode, setModalMode] = useState(null);
+    const [modalUserId, setModalUserId] = useState(null);
+
+    const [currentUser, setCurrentUser] = useState(null);
+
 
     async function loadUsers() {
         try {
@@ -49,13 +56,6 @@ export default function Users() {
 
         loadUsers(); // перезагрузка списка
     }
-    const isAdmin = user?.role === 1;
-
-    const [modalMode, setModalMode] = useState(null);
-    const [modalUserId, setModalUserId] = useState(null);
-
-    const [currentUser, setCurrentUser] = useState(null);
-
     function openAdd() {
         setModalMode("add");
         setModalUserId(null);
@@ -129,7 +129,7 @@ export default function Users() {
                         <i
                             className="bi bi-person-fill-slash text-danger"
                             role="button"
-                            onClick={() => openDelete(u)}
+                            onClick={() => openDelete(u.id)}
                         />
 
                         <i
@@ -139,6 +139,11 @@ export default function Users() {
                         />
                         <i className="bi bi-person-fill-gear"></i>
                         <i className="bi bi-person-fill-slash"></i>
+                        <i
+                            className="bi bi-person-fill-slash text-danger ms-2"
+                            role="button"
+                            onClick={() => openDelete(u)}
+                        />
                     </div>
                 </div>
             ))}

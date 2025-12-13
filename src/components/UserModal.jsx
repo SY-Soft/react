@@ -1,5 +1,7 @@
 import { useEffect , useState } from "react";
 
+
+
 export default function UserModal({
                                       mode,
                                       userId,
@@ -9,6 +11,36 @@ export default function UserModal({
     if (!mode) return null; // ← аналог "модалка скрыта"
     const [loading, setLoading] = useState(false);
     const [targetUser, setTargetUser] = useState(null);
+    const [error, setError] = useState("");
+
+    async function handleDelete() {
+        setLoading(true);
+        setError("");
+
+        try {
+            const res = await fetch(
+                `http://localhost:8800/users/${user.id}`,
+                {
+                    method: "DELETE",
+                }
+            );
+
+            const data = await res.json();
+
+            if (!data.success) {
+                setError("Ошибка удаления");
+                return;
+            }
+
+            onDone();          // обновляем список
+            closeModal();      // закрываем модалку
+        } catch (e) {
+            setError("Сервер недоступен");
+        } finally {
+            setLoading(false);
+        }
+    }
+
 
     useEffect(() => {
         if (!userId) return;
@@ -23,6 +55,10 @@ export default function UserModal({
             })
             .finally(() => setLoading(false));
     }, [mode, userId]);
+function closeModal()
+{
+    bsModal.current.hide();
+}
 
     return (
         <div className="modal fade show d-block" tabIndex="-1">
@@ -106,10 +142,25 @@ export default function UserModal({
                         </button>
 
                         {mode === "delete" && (
-                            <button className="btn btn-danger">
-                                Удалить
-                            </button>
+                            <div className="d-flex justify-content-end gap-2">
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={closeModal}
+                                    disabled={loading}
+                                >
+                                    Отмена
+                                </button>
+
+                                <button
+                                    className="btn btn-danger"
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                >
+                                    Удалить
+                                </button>
+                            </div>
                         )}
+
 
                         {(mode === "add" || mode === "edit") && (
                             <button className="btn btn-primary">
