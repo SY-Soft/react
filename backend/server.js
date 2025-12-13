@@ -61,6 +61,33 @@ app.post("/login", (req, res) => {
         });
     });
 });
+function checkAdmin(req, res, next) {
+    const auth = req.headers.authorization;
+    if (!auth) return res.status(401).json({ success: false, error: "No token" });
+
+    try {
+        const token = auth.split(" ")[1];
+        const decoded = jwt.verify(token, SECRET);
+
+        if (decoded.role !== 1)
+            return res.status(403).json({ success: false, error: "Not admin" });
+
+        req.user = decoded;
+        next();
+    } catch {
+        return res.status(401).json({ success: false, error: "Invalid token" });
+    }
+}
+
+app.put("/users/role", checkAdmin, (req, res) => {
+    const { userId, role } = req.body;
+
+    const q = "UPDATE users SET role = ? WHERE id = ?";
+    db.query(q, [role, userId], (err) => {
+        if (err) return res.json({ success: false, error: "DB error" });
+        res.json({ success: true });
+    });
+});
 
 // ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
 app.listen(8800, () => {

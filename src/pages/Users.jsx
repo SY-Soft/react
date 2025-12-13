@@ -24,6 +24,30 @@ export default function Users() {
     }, []);
 
 
+    async function changeRole(userId, newRole) {
+        if (!window.confirm("Изменить роль пользователя?")) return;
+
+        const res = await fetch("http://localhost:8800/users/role", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+                userId,
+                role: newRole,
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            alert(data.error);
+            return;
+        }
+
+        loadUsers(); // перезагрузка списка
+    }
 
     return (
         <div>
@@ -51,12 +75,24 @@ export default function Users() {
                     <div className="col-4">{u.name + (u.role===1?' (admin)':'')}</div>
                     <div className="col-4">{u.email}</div>
                     <div className="col-4">
+                        <i
+                            className="bi bi-person-fill-up text-success"
+                            role="button"
+                            onClick={() => changeRole(u.id, 1)}
+                        />
+
+                        <i
+                            className="bi bi-person-fill-down text-warning ms-2"
+                            role="button"
+                            onClick={() => changeRole(u.id, 0)}
+                        />
+
                         {/* if (user.role==='admin') let btnDisable=FALSE; else let btnDisable=TRUE; */}
-                        { /* if (u.role===1) */ }
+                        { /* if (u.role===1) */}
                         <a href={'#'} className="sy-user-op"><i className="bi bi-person-fill-down"></i></a>
-                        { /* else */ }
+                        { /* else */}
                         <a href={'#'} className="sy-user-op"><i className="bi bi-person-fill-up"></i></a>
-                        { /* endif) */ }
+                        { /* endif) */}
                         <a href={'#'} className="sy-user-op"><i className="bi bi-person-fill-gear"></i></a>
                         <a href={'#'} className="sy-user-op"><i className="bi bi-person-fill-slash"></i></a>
                     </div>
