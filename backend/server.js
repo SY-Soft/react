@@ -41,7 +41,7 @@ app.post("/login", (req, res) => {
 
         const user = data[0];
 
-        const role = user.email === "yuriy@test.com" ? "admin" : "user";
+        const role = user.role === 1 ? "admin" : "user";
 
         const token = jwt.sign(
             { id: user.id, email: user.email, role },

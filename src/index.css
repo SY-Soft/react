@@ -69,7 +69,18 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+.sy-link-ico{
+ color: white;
+  font-size: 26px;
+  margin-top: -5px;
+}
+.sy-header-debug{
+ color: #ffd6d6;
 
+}
+.sy-user-op{}
+.sy-user-op i{ font-size: 22px;}
+.sy-user-op:disabled i{ color: aqua; }
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

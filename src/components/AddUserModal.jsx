@@ -68,7 +68,7 @@ export default function AddUserModal({ onAdd }) {
     return (
         <>
             {/* Кнопка открытия */}
-            <button className="btn btn-primary" onClick={open}>
+            <button className="btn btn-primary" onClick={open} disabled>
                 <i className="bi bi-person-fill-add"></i> Добавить юзера
             </button>
 
