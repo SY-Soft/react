@@ -30,7 +30,6 @@ app.post("/users", (req, res) => {
 
 // ===== LOGIN =====
 app.post("/login", (req, res) => {
-    console.log("LOGIN HIT:", req.body);
     const { email, password } = req.body;
 
     const q = "SELECT * FROM users WHERE email = ? AND password = ?";
@@ -41,7 +40,8 @@ app.post("/login", (req, res) => {
 
         const user = data[0];
 
-        const role = user.role === 1 ? "admin" : "user";
+        // const role = user.role === 1 ? "admin" : "user";
+        const role = user.role;
 
         const token = jwt.sign(
             { id: user.id, email: user.email, role },
@@ -63,21 +63,30 @@ app.post("/login", (req, res) => {
 });
 function checkAdmin(req, res, next) {
     const auth = req.headers.authorization;
-    if (!auth) return res.status(401).json({ success: false, error: "No token" });
+    if (!auth) {
+        console.log("NO AUTH HEADER");
+        return res.status(401).json({ success: false, error: "No token" });
+    }
 
     try {
         const token = auth.split(" ")[1];
         const decoded = jwt.verify(token, SECRET);
 
-        if (decoded.role !== 1)
+    //    console.log("JWT DECODED:", decoded); // ← ВАЖНО
+
+        if (decoded.role !== 1) {
+    //        console.log("ROLE IS NOT ADMIN:", decoded.role);
             return res.status(403).json({ success: false, error: "Not admin" });
+        }
 
         req.user = decoded;
         next();
-    } catch {
+    } catch (e) {
+        console.log("JWT ERROR:", e.message);
         return res.status(401).json({ success: false, error: "Invalid token" });
     }
 }
+
 
 app.put("/users/role", checkAdmin, (req, res) => {
     const { userId, role } = req.body;
@@ -88,6 +97,36 @@ app.put("/users/role", checkAdmin, (req, res) => {
         res.json({ success: true });
     });
 });
+
+app.get("/users/:id", (req, res) => {
+    const q = "SELECT id, name, email, role FROM users WHERE id = ?";
+    db.query(q, [req.params.id], (err, data) => {
+        if (err) return res.status(500).json(err);
+        if (data.length === 0) return res.status(404).json({ error: "Not found" });
+
+        res.json(data[0]);
+    });
+});
+
+app.delete("/users/:id", (req, res) => {
+    const userId = req.params.id;
+
+    const q = "DELETE FROM users WHERE id = ?";
+    db.query(q, [userId], (err, result) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                error: "DB error",
+            });
+        }
+
+        return res.json({
+            success: true,
+            id: userId,
+        });
+    });
+});
+
 
 // ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
 app.listen(8800, () => {

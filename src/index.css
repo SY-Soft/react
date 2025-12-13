@@ -78,9 +78,9 @@ button:focus-visible {
  color: #ffd6d6;
 
 }
-.sy-user-op{}
-.sy-user-op i{ font-size: 22px;}
-.sy-user-op:disabled i{ color: aqua; }
+i.sy-user-op{ font-size: 22px; margin-right: 10px;}
+i.sy-user-op.text-secondary{ cursor: default; }
+i.sy-user-op:last-child{margin-left: 0;}
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
