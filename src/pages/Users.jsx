@@ -66,10 +66,10 @@ export default function Users() {
         setModalUserId(id);
     }
 
-    function openDelete(user) {
-        setCurrentUser(user);
+    function openDelete(id) {
         setModalMode("delete");
-        modalRef.current.open();
+        setModalUserId(id);
+//        modalRef.current.open();
     }
 
 
@@ -126,24 +126,18 @@ export default function Users() {
                                 title="Сделать админом"
                             />
                         )}
-                        <i
-                            className="bi bi-person-fill-slash text-danger"
-                            role="button"
-                            onClick={() => openDelete(u.id)}
-                        />
 
                         <i
-                            className="bi bi-person-fill-gear"
+                            className={`bi bi-person-fill-gear sy-user-op ${isAdmin ? "text-primary" : "text-secondary"}`}
                             role="button"
-                            onClick={() => openEdit(u.id)}
+                            onClick={() => isAdmin && openEdit(u.id)}
                         />
-                        <i className="bi bi-person-fill-gear"></i>
-                        <i className="bi bi-person-fill-slash"></i>
                         <i
-                            className="bi bi-person-fill-slash text-danger ms-2"
-                            role="button"
-                            onClick={() => openDelete(u)}
-                        />
+                        className={`bi bi-person-fill-slash sy-user-op ${isAdmin ? "text-danger" : "text-secondary"}`}
+                        role="button"
+                        onClick={() => isAdmin && openDelete(u.id)}
+                    />
+
                     </div>
                 </div>
             ))}

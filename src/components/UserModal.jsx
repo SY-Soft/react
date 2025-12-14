@@ -8,7 +8,6 @@ export default function UserModal({
                                       onDone,
                                       onClose
                                   }) {
-    if (!mode) return null; // ← аналог "модалка скрыта"
     const [loading, setLoading] = useState(false);
     const [targetUser, setTargetUser] = useState(null);
     const [error, setError] = useState("");
@@ -16,10 +15,11 @@ export default function UserModal({
     async function handleDelete() {
         setLoading(true);
         setError("");
-
+        console.log('handleDelete2');
+        console.log(userId);
         try {
             const res = await fetch(
-                `http://localhost:8800/users/${user.id}`,
+                `http://localhost:8800/users/${userId}`,
                 {
                     method: "DELETE",
                 }
@@ -41,7 +41,6 @@ export default function UserModal({
         }
     }
 
-
     useEffect(() => {
         if (!userId) return;
         if (mode !== "edit" && mode !== "delete") return;
@@ -51,14 +50,13 @@ export default function UserModal({
         fetch(`http://localhost:8800/users/${userId}`)
             .then(res => res.json())
             .then(data => {
+                console.log(data);
                 setTargetUser(data);
             })
             .finally(() => setLoading(false));
     }, [mode, userId]);
-function closeModal()
-{
-    bsModal.current.hide();
-}
+
+    if (!mode) return null; // ← аналог "модалка скрыта"
 
     return (
         <div className="modal fade show d-block" tabIndex="-1">
@@ -143,13 +141,7 @@ function closeModal()
 
                         {mode === "delete" && (
                             <div className="d-flex justify-content-end gap-2">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={closeModal}
-                                    disabled={loading}
-                                >
-                                    Отмена
-                                </button>
+
 
                                 <button
                                     className="btn btn-danger"

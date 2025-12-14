@@ -10,7 +10,7 @@ export default function Header() {
                 <Link className="navbar-brand" to="/">MyReact</Link>
                 {user ? (
                     <>
-                        <span className="sy-header-debug">Ты {user.name}, и ты {user.role}</span>
+                        <span className="sy-header-debug">Ты {user.name}, и ты {user.role===1?'admin':'user'}</span>
                     </>
                 ) : (
                     <>
