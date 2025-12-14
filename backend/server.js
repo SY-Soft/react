@@ -127,6 +127,42 @@ app.delete("/users/:id", (req, res) => {
     });
 });
 
+app.post("/users/save", checkAdmin, async (req, res) => {
+    const { id, name, email, password } = req.body;
+
+    if (!name || !email) {
+        return res.status(400).json({ error: "Invalid data" });
+    }
+
+    if (id) {
+        // UPDATE
+        if (password) {
+            await db.query(
+                "UPDATE users SET name=?, email=?, password=? WHERE id=?",
+                [name, email, password, id]
+            );
+        } else {
+            await db.query(
+                "UPDATE users SET name=?, email=? WHERE id=?",
+                [name, email, id]
+            );
+        }
+    } else {
+        // INSERT
+        if (!password) {
+            return res.status(400).json({ error: "Password required" });
+        }
+
+        await db.query(
+            "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 0)",
+            [name, email, password]
+        );
+    }
+
+    res.json({ ok: true });
+});
+
+
 
 // ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
 app.listen(8800, () => {

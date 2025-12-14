@@ -1,28 +1,54 @@
-import { useEffect , useState } from "react";
-
-
+import { useEffect, useState } from "react";
 
 export default function UserModal({
                                       mode,
                                       userId,
                                       onDone,
-                                      onClose
+                                      onClose,
                                   }) {
+    const isEdit = mode === "edit";
+    const isAdd = mode === "add";
+    const isDelete = mode === "delete";
+
     const [loading, setLoading] = useState(false);
     const [targetUser, setTargetUser] = useState(null);
     const [error, setError] = useState("");
 
+    // ===== form state =====
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    // ===== load user for edit / delete =====
+    useEffect(() => {
+        if (!userId) return;
+        if (!isEdit && !isDelete) return;
+
+        setLoading(true);
+
+        fetch(`http://localhost:8800/users/${userId}`)
+            .then(res => res.json())
+            .then(data => {
+                setTargetUser(data);
+
+                if (isEdit) {
+                    setName(data.name || "");
+                    setEmail(data.email || "");
+                    setPassword("");
+                }
+            })
+            .finally(() => setLoading(false));
+    }, [mode, userId]);
+
+    // ===== delete =====
     async function handleDelete() {
         setLoading(true);
         setError("");
-        console.log('handleDelete2');
-        console.log(userId);
+
         try {
             const res = await fetch(
                 `http://localhost:8800/users/${userId}`,
-                {
-                    method: "DELETE",
-                }
+                { method: "DELETE" }
             );
 
             const data = await res.json();
@@ -32,8 +58,8 @@ export default function UserModal({
                 return;
             }
 
-            onDone();          // обновляем список
-            closeModal();      // закрываем модалку
+            onDone();
+            onClose();
         } catch (e) {
             setError("Сервер недоступен");
         } finally {
@@ -41,22 +67,41 @@ export default function UserModal({
         }
     }
 
-    useEffect(() => {
-        if (!userId) return;
-        if (mode !== "edit" && mode !== "delete") return;
-
+    // ===== add / edit =====
+    async function handleSubmit() {
         setLoading(true);
+        setError("");
 
-        fetch(`http://localhost:8800/users/${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                console.log(data);
-                setTargetUser(data);
-            })
-            .finally(() => setLoading(false));
-    }, [mode, userId]);
+        console.log("TOKEN:", localStorage.getItem("token"));
 
-    if (!mode) return null; // ← аналог "модалка скрыта"
+
+        try {
+            const payload = {
+                id: isEdit ? targetUser.id : null,
+                name,
+                email,
+                password: password || null,
+            };
+
+            await fetch("http://localhost:8800/users/save", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            onDone();
+            onClose();
+        } catch (e) {
+            setError("Ошибка сохранения");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    if (!mode) return null;
 
     return (
         <div className="modal fade show d-block" tabIndex="-1">
@@ -65,25 +110,30 @@ export default function UserModal({
 
                     <div className="modal-header">
                         <h5 className="modal-title">
-                            {mode === "add" && "Добавить пользователя"}
+                            {isAdd && "Добавить пользователя"}
 
-                            {mode === "edit" && targetUser && (
-                                <div className="alert alert-secondary py-2">
+                            {isEdit && targetUser && (
+                                <>
                                     Редактирование пользователя:{" "}
                                     <strong>
                                         {targetUser.name}
                                         {targetUser.role === 1 ? " (admin)" : ""}
                                     </strong>
-                                </div>
+                                </>
                             )}
 
-                            {mode === "delete" && "Удалить пользователя"}
+                            {isDelete && "Удалить пользователя"}
                         </h5>
+
                         <button className="btn-close" onClick={onClose} />
                     </div>
 
                     <div className="modal-body">
-                        {mode === "delete" && (
+                        {error && (
+                            <div className="alert alert-danger">{error}</div>
+                        )}
+
+                        {isDelete && (
                             <>
                                 {loading && <p>Загрузка...</p>}
 
@@ -100,15 +150,15 @@ export default function UserModal({
                             </>
                         )}
 
-
-                        {(mode === "add" || mode === "edit") && (
+                        {(isAdd || isEdit) && (
                             <>
                                 <div className="mb-3">
                                     <label className="form-label">Имя</label>
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Имя"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
                                     />
                                 </div>
 
@@ -117,21 +167,24 @@ export default function UserModal({
                                     <input
                                         type="email"
                                         className="form-control"
-                                        placeholder="Email"
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
                                     />
                                 </div>
 
-                                    <div className="mb-3">
-                                        <label className="form-label">Пароль</label>
-                                        <input
-                                            type="password"
-                                            className="form-control"
-                                            placeholder="Пароль"
-                                        />
-                                    </div>
+                                <div className="mb-3">
+                                    <label className="form-label">
+                                        Пароль {isEdit && "(необязательно)"}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                    />
+                                </div>
                             </>
                         )}
-
                     </div>
 
                     <div className="modal-footer">
@@ -139,24 +192,23 @@ export default function UserModal({
                             Отмена
                         </button>
 
-                        {mode === "delete" && (
-                            <div className="d-flex justify-content-end gap-2">
-
-
-                                <button
-                                    className="btn btn-danger"
-                                    onClick={handleDelete}
-                                    disabled={loading}
-                                >
-                                    Удалить
-                                </button>
-                            </div>
+                        {isDelete && (
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDelete}
+                                disabled={loading}
+                            >
+                                Удалить
+                            </button>
                         )}
 
-
-                        {(mode === "add" || mode === "edit") && (
-                            <button className="btn btn-primary">
-                                Сохранить
+                        {(isAdd || isEdit) && (
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSubmit}
+                                disabled={loading}
+                            >
+                                {isAdd ? "Добавить" : "Сохранить"}
                             </button>
                         )}
                     </div>
