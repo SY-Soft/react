@@ -26,18 +26,39 @@ export default function UserModal({
 
         setLoading(true);
 
-        fetch(`http://localhost:8800/users/${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                setTargetUser(data);
+        const loadUser = async () => {
+            try {
+                const res = await fetch("http://localhost:8800/user/get", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                    body: JSON.stringify({ id: userId }),
+                });
 
-                if (isEdit) {
-                    setName(data.name || "");
-                    setEmail(data.email || "");
-                    setPassword("");
+                if (!res.ok) {
+                    throw new Error("Ошибка сервера");
                 }
-            })
-            .finally(() => setLoading(false));
+                else {
+                    const data = await res.json();
+                    setTargetUser(data);
+
+                    if (isEdit) {
+                        setName(data.name || "");
+                        setEmail(data.email || "");
+                        setPassword("");
+                    }
+                }
+            } catch (e) {
+                setError("Ошибка загрузки пользователя");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadUser();
+
     }, [mode, userId]);
 
     // ===== delete =====
@@ -47,7 +68,7 @@ export default function UserModal({
 
         try {
             const res = await fetch(
-                `http://localhost:8800/users/${userId}`,
+                `http://localhost:8800/user_delete/${userId}`,
                 { method: "DELETE" }
             );
 
@@ -71,10 +92,7 @@ export default function UserModal({
     async function handleSubmit() {
         setLoading(true);
         setError("");
-
-        console.log("TOKEN:", localStorage.getItem("token"));
-
-
+        console.log("handleSubmit TOKEN:", localStorage.getItem("token"));
         try {
             const payload = {
                 id: isEdit ? targetUser.id : null,
@@ -100,7 +118,6 @@ export default function UserModal({
             setLoading(false);
         }
     }
-
     if (!mode) return null;
 
     return (

@@ -17,7 +17,7 @@ export default function Users() {
 
     async function loadUsers() {
         try {
-            const res = await fetch(`${API}/users`);
+            const res = await fetch(`${API}/users/get_all`);
             const data = await res.json();
             setUsers(Array.isArray(data) ? data : []);
         } catch (err) {
@@ -88,18 +88,17 @@ export default function Users() {
                     }}
                     onClose={() => setModalMode(null)}
                 />
-                <button className="btn btn-primary" onClick={openAdd}>
+                <button className={`btn ${isAdmin ? "btn-primary" : "btn-secondary"}`}
+                        onClick={() => isAdmin && openAdd}
+                        disabled={isAdmin?false:true}
+                >
                     Добавить
                 </button>
-                {/*
-                <button className="btn btn-primary" onClick={openAdd}>
-                    <i className="bi bi-person-fill-add me-1"></i> Добавить
-                </button>
-            */}
+                
             </div>
 
             <div className="row fw-bold border-bottom pb-2">
-            <div className="col-4">Имя</div>
+                <div className="col-4">Имя</div>
                 <div className="col-4">Email</div>
                 <div className="col-4">...</div>
             </div>
@@ -128,9 +127,9 @@ export default function Users() {
                         )}
 
                         <i
-                            className={`bi bi-person-fill-gear sy-user-op ${isAdmin ? "text-primary" : "text-secondary"}`}
+                            className={`bi bi-person-fill-gear sy-user-op ${(isAdmin || user?.id===u.id) ? "text-primary" : "text-secondary"}`}
                             role="button"
-                            onClick={() => isAdmin && openEdit(u.id)}
+                            onClick={() => (isAdmin || user?.id===u.id) && openEdit(u.id)}
                         />
                         <i
                         className={`bi bi-person-fill-slash sy-user-op ${isAdmin ? "text-danger" : "text-secondary"}`}
