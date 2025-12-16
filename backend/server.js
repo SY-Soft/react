@@ -109,32 +109,7 @@ app.put("/users/role", checkAdmin, (req, res) => {
         res.json({ success: true });
     });
 });
-/*
 
-// ===== USERS ADD =====
-app.post("/users", (req, res) => {
-    const q = "INSERT INTO users (`name`, `email`, `password`) VALUES (?)";
-    const values = [req.body.name, req.body.email, req.body.pass];
-
-    db.query(q, [values], (err, data) => {
-        if (err) return res.status(500).json(err);
-        return res.json({ id: data.insertId, ...req.body });
-    });
-});
-
-
-app.get("/users/:id", (req, res) => {
-    const q = "SELECT id, name, email, role FROM users WHERE id = ?";
-    db.query(q, [req.params.id], (err, data) => {
-        if (err) return res.status(500).json(err);
-        if (data.length === 0) return res.status(404).json({ error: "Not found" });
-
-        res.json(data[0]);
-    });
-});
-
-
-*/
 app.post("/users/save", checkAdmin, async (req, res) => {
     const { id, name, email, password } = req.body;
 

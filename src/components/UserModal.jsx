@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "../utils/api.js";
+import { useNotify } from "../context/NotificationContext";
+
+
 
 export default function UserModal({
                                       mode,
@@ -14,6 +18,8 @@ export default function UserModal({
     const [targetUser, setTargetUser] = useState(null);
     const [error, setError] = useState("");
 
+    const { notify } = useNotify();
+
     // ===== form state =====
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -25,33 +31,35 @@ export default function UserModal({
         if (!isEdit && !isDelete) return;
 
         setLoading(true);
+        setError("");
 
         const loadUser = async () => {
             try {
-                const res = await fetch("http://localhost:8800/user/get", {
+                const data = await apiFetch("/user/get", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
                     body: JSON.stringify({ id: userId }),
                 });
 
-                if (!res.ok) {
-                    throw new Error("Ошибка сервера");
-                }
-                else {
-                    const data = await res.json();
-                    setTargetUser(data);
+                setTargetUser(data);
 
-                    if (isEdit) {
-                        setName(data.name || "");
-                        setEmail(data.email || "");
-                        setPassword("");
-                    }
+                if (isEdit) {
+                    setName(data.name || "");
+                    setEmail(data.email || "");
+                    setPassword("");
                 }
             } catch (e) {
+                console.error("loadUser error1:", e);
+
+                // 🔴 JWT умер / нет доступа
+                if (e.type === "AUTH") {
+                    setError("Сессия истекла. Перезайдите.");
+                    notify("Сессия истекла. Перезайдите.", "danger");
+                    onClose(); // закрываем модалку
+                    return;
+                }
+
                 setError("Ошибка загрузки пользователя");
+                notify("Ошибка загрузки пользователя", "danger");
             } finally {
                 setLoading(false);
             }
@@ -64,32 +72,48 @@ export default function UserModal({
     // ===== delete =====
     async function handleDelete() {
         setLoading(true);
-        setError("");
-
         try {
-            const res = await fetch(
-                `http://localhost:8800/user_delete/${userId}`,
-                { method: "DELETE" }
-            );
+            await apiFetch(`/user_delete/${userId}`, {
+                method: "DELETE",
+            });
 
-            const data = await res.json();
-
-            if (!data.success) {
-                setError("Ошибка удаления");
-                return;
-            }
-
+            notify("Пользователь удален", "success");
             onDone();
             onClose();
+
         } catch (e) {
-            setError("Сервер недоступен");
-        } finally {
-            setLoading(false);
+            notify(e.message, "danger");
         }
+        //**
+        // setLoading(true);
+        // setError("");
     }
 
     // ===== add / edit =====
     async function handleSubmit() {
+        setLoading(true);
+        try {
+            const payload = {
+                id: isEdit ? targetUser.id : null,
+                name,
+                email,
+                password: password || null,
+            };
+
+            await apiFetch(`/users/save`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+
+            notify(`Пользователь ${isEdit ? "обновлен" : "добавлен"}`, "success");
+            onDone();
+            onClose();
+
+        } catch (e) {
+            notify(e.message, "danger");
+        }
+
+        /*
         setLoading(true);
         setError("");
         console.log("handleSubmit TOKEN:", localStorage.getItem("token"));
@@ -117,7 +141,9 @@ export default function UserModal({
         } finally {
             setLoading(false);
         }
+        */
     }
+
     if (!mode) return null;
 
     return (

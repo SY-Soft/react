@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import UserModal from "../components/UserModal";
 import {useAuth} from "../AuthContext.jsx";
+import { apiFetch } from "../utils/api.js";
+import { useNotify } from "../context/NotificationContext";
 
 export default function Users() {
     const [users, setUsers] = useState([]);
@@ -14,6 +16,7 @@ export default function Users() {
 
     const [currentUser, setCurrentUser] = useState(null);
 
+    const { notify } = useNotify();
 
     async function loadUsers() {
         try {
@@ -32,30 +35,21 @@ export default function Users() {
 
 
     async function changeRole(userId, newRole) {
-      //  if (!window.confirm("Изменить роль пользователя?")) return;
-        console.log("TOKEN:", localStorage.getItem("token"));
+        try {
+            await apiFetch("/users/role", {
+                method: "PUT",
+                body: JSON.stringify({ userId, role: newRole }),
+            });
 
-        const res = await fetch("http://localhost:8800/users/role", {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({
-                userId,
-                role: newRole,
-            }),
-        });
+            notify("Роль пользователя изменена", "success");
+            loadUsers();
 
-        const data = await res.json();
-
-        if (!data.success) {
-            alert(data.error);
-            return;
+        } catch (e) {
+            notify(e.message, "danger");
         }
-
-        loadUsers(); // перезагрузка списка
     }
+
+
     function openAdd() {
         setModalMode("add");
         setModalUserId(null);
@@ -69,7 +63,6 @@ export default function Users() {
     function openDelete(id) {
         setModalMode("delete");
         setModalUserId(id);
-//        modalRef.current.open();
     }
 
 
@@ -89,12 +82,12 @@ export default function Users() {
                     onClose={() => setModalMode(null)}
                 />
                 <button className={`btn ${isAdmin ? "btn-primary" : "btn-secondary"}`}
-                        onClick={() => isAdmin && openAdd}
-                        disabled={isAdmin?false:true}
+                        onClick={() => isAdmin && openAdd()}
+                        disabled={!isAdmin}
                 >
                     Добавить
                 </button>
-                
+
             </div>
 
             <div className="row fw-bold border-bottom pb-2">
