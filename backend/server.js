@@ -110,44 +110,92 @@ app.put("/users/role", checkAdmin, (req, res) => {
     });
 });
 
-app.post("/users/save", checkAdmin, async (req, res) => {
+app.post("/users/save", (req, res) => {
     const { id, name, email, password } = req.body;
 
-    if (!name || !email) {
-        return res.status(400).json({ error: "Invalid data" });
-    }
-
-    if (id) {
-        // UPDATE
-        let q;
-        let values;
-        if (password) {
-            q = "UPDATE users SET name=?, email=?, password=? WHERE id=?";
-            values = [name, email, password, id];
-        } else {
-            q = "UPDATE users SET name=?, email=? WHERE id=?";
-            values = [name, email, id];
-        }
-        db.query(q, values, (err, result) => {
-                if (err) {
-                    return res.status(500).json({ success: false });
-                }
-            });
-    } else {
-        // INSERT
-        if (!password) {
-            return res.status(400).json({ error: "Password required" });
-        }
-
-        db.query("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 0)",
-            [name, email, password], (err, result) => {
-            if (err) {
-                return res.status(500).json({ success: false });
-            }
+    // ===== validation =====
+    if (!name || name.length < 3) {
+        return res.json({
+            success: false,
+            errors: { name: "Имя минимум 3 символа" },
         });
     }
 
-    res.json({ ok: true });
+    if (!email) {
+        return res.json({
+            success: false,
+            errors: { email: "Email обязателен" },
+        });
+    }
+
+    // ===== check email unique =====
+    const checkSql = id
+        ? "SELECT id FROM users WHERE email = ? AND id <> ?"
+        : "SELECT id FROM users WHERE email = ?";
+
+    const checkParams = id ? [email, id] : [email];
+
+    db.query(checkSql, checkParams, (err, rows) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                error: "DB error",
+            });
+        }
+console.log(rows.length);
+        if (rows.length > 0) {
+
+            console.log('rows.length > 0');
+            return res.json({
+                success: false,
+                errors: {
+                    email: "Пользователь с таким email уже существует",
+                },
+            });
+        }
+        console.log('rows.length NOT > 0');
+
+        // ===== save =====
+        if (id) {
+            // EDIT
+            let sql = "UPDATE users SET name=?, email=?";
+            const params = [name, email];
+
+            if (password) {
+                sql += ", password=?";
+                params.push(password);
+            }
+
+            sql += " WHERE id=?";
+            params.push(id);
+
+            db.query(sql, params, (err) => {
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        error: "DB error",
+                    });
+                }
+
+                res.json({ success: true });
+            });
+        } else {
+            // ADD
+            const sql =
+                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
+            db.query(sql, [name, email, password], (err) => {
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        error: "DB error",
+                    });
+                }
+
+                res.json({ success: true });
+            });
+        }
+    });
 });
 
 app.delete("/user_delete/:id", (req, res) => {

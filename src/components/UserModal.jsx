@@ -17,6 +17,7 @@ export default function UserModal({
     const [loading, setLoading] = useState(false);
     const [targetUser, setTargetUser] = useState(null);
     const [error, setError] = useState("");
+    const [errors, setErrors] = useState({});
 
     const { notify } = useNotify();
 
@@ -91,7 +92,31 @@ export default function UserModal({
 
     // ===== add / edit =====
     async function handleSubmit() {
+        // 🔹 1. локальная валидация
+        const newErrors = {};
+
+        if (!name || name.trim().length < 3 || name.trim().length > 32) {
+            newErrors.name = "Имя должно быть от 3 до 32 символов";
+        }
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            newErrors.email = "Неверный email";
+        }
+
+        if (isAdd && (!password || password.length < 3)) {
+            newErrors.password = "Пароль минимум 3 символа";
+        }
+console.log(newErrors);
+        // 🔴 если есть ошибки — НЕ идём дальше
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        // 🔹 2. ошибок нет — чистим и шлём запрос
+        setErrors({});
         setLoading(true);
+
         try {
             const payload = {
                 id: isEdit ? targetUser.id : null,
@@ -110,38 +135,15 @@ export default function UserModal({
             onClose();
 
         } catch (e) {
-            notify(e.message, "danger");
+            if (e.type === "BUSINESS") {
+            setErrors(e.errors || {});
+            return;
         }
 
-        /*
-        setLoading(true);
-        setError("");
-        console.log("handleSubmit TOKEN:", localStorage.getItem("token"));
-        try {
-            const payload = {
-                id: isEdit ? targetUser.id : null,
-                name,
-                email,
-                password: password || null,
-            };
-
-            await fetch("http://localhost:8800/users/save", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            onDone();
-            onClose();
-        } catch (e) {
-            setError("Ошибка сохранения");
+            notify(e.message || "Ошибка сохранения", "danger");
         } finally {
             setLoading(false);
         }
-        */
     }
 
     if (!mode) return null;
@@ -198,21 +200,31 @@ export default function UserModal({
                                 <div className="mb-3">
                                     <label className="form-label">Имя</label>
                                     <input
-                                        type="text"
-                                        className="form-control"
+                                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                     />
+                                    {errors.name && (
+                                        <div className="invalid-feedback">
+                                            {errors.name}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mb-3">
                                     <label className="form-label">Email</label>
                                     <input
                                         type="email"
-                                        className="form-control"
+                                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
                                     />
+                                    {errors.email && (
+                                        <div className="invalid-feedback">
+                                            {errors.email}
+                                        </div>
+                                    )}
+
                                 </div>
 
                                 <div className="mb-3">
@@ -221,10 +233,16 @@ export default function UserModal({
                                     </label>
                                     <input
                                         type="password"
-                                        className="form-control"
+                                        className={`form-control ${errors.password ? "is-invalid" : ""}`}
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
                                     />
+                                    {errors.password && (
+                                        <div className="invalid-feedback">
+                                            {errors.password}
+                                        </div>
+                                    )}
+
                                 </div>
                             </>
                         )}
