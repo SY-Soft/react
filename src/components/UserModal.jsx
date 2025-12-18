@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "../utils/api.js";
-import { useNotify } from "../context/NotificationContext";
-
+import {useEffect, useState} from "react";
+import {apiFetch} from "../utils/api.js";
+import {useNotify} from "../context/NotificationContext";
 
 
 export default function UserModal({
@@ -19,7 +18,7 @@ export default function UserModal({
     const [error, setError] = useState("");
     const [errors, setErrors] = useState({});
 
-    const { notify } = useNotify();
+    const {notify} = useNotify();
 
     // ===== form state =====
     const [name, setName] = useState("");
@@ -28,12 +27,44 @@ export default function UserModal({
 
     // ===== load user for edit / delete =====
     useEffect(() => {
+        // ===== ADD MODE =====
         if (isAdd) {
-            setName("");
-            setEmail("");
-            setPassword("");
-            setTargetUser(null);
+            setErrors({});
+            setError("");
+            setLoading(true);
+
+            const checkAccess = async () => {
+                try {
+                    await apiFetch("/admin/check", {
+                        method: "GET",
+                    });
+
+                    // доступ есть → просто чистим форму
+                    setName("");
+                    setEmail("");
+                    setPassword("");
+                    setTargetUser(null);
+
+                } catch (e) {
+                    // 🔴 нет доступа / JWT умер
+                    if (e.type === "AUTH") {
+                        notify("Сессия истекла. Перезайдите.", "danger");
+                        onClose();
+                        return;
+                    }
+
+                    notify("Ошибка доступа", "danger");
+                    onClose();
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            checkAccess();
+            return;
         }
+
+
         if (!userId) return;
         if (!isEdit && !isDelete) return;
 
@@ -46,7 +77,7 @@ export default function UserModal({
             try {
                 const data = await apiFetch("/user/get", {
                     method: "POST",
-                    body: JSON.stringify({ id: userId }),
+                    body: JSON.stringify({id: userId}),
                 });
 
                 setTargetUser(data);
@@ -114,7 +145,7 @@ export default function UserModal({
         if (isAdd && (!password || password.length < 3)) {
             newErrors.password = "Пароль минимум 3 символа";
         }
-console.log(newErrors);
+        console.log(newErrors);
         // 🔴 если есть ошибки — НЕ идём дальше
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -144,9 +175,9 @@ console.log(newErrors);
 
         } catch (e) {
             if (e.type === "BUSINESS") {
-            setErrors(e.errors || {});
-            return;
-        }
+                setErrors(e.errors || {});
+                return;
+            }
 
             notify(e.message || "Ошибка сохранения", "danger");
         } finally {
@@ -178,7 +209,7 @@ console.log(newErrors);
                             {isDelete && "Удалить пользователя"}
                         </h5>
 
-                        <button className="btn-close" onClick={onClose} />
+                        <button className="btn-close" onClick={onClose}/>
                     </div>
 
                     <div className="modal-body">

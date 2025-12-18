@@ -203,6 +203,9 @@ app.delete("/user_delete/:id", (req, res) => {
     });
 });
 
+app.get("/admin/check", checkAdmin, (req, res) => {
+    res.json({ success: true });
+});
 
 // ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
 app.listen(8800, () => {
