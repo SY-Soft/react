@@ -43,18 +43,6 @@ app.get("/users/get_all", (req, res) => {
     });
 });
 
-/*
-app.get("/users/:id", (req, res) => {
-    const q = "SELECT id, name, email, role FROM users WHERE id = ?";
-    db.query(q, [req.params.id], (err, data) => {
-        if (err) return res.status(500).json(err);
-        if (data.length === 0) return res.status(404).json({ error: "Not found" });
-
-        res.json(data[0]);
-    });
-});
-
-*/
 app.post("/user/get", checkAdmin, (req, res) => {
     const q = "SELECT id, name, email, role FROM users WHERE id = ?";
     db.query(q, [req.body.id], (err, data) => {
@@ -63,8 +51,6 @@ app.post("/user/get", checkAdmin, (req, res) => {
         return res.json(data[0]);
     });
 });
-
-
 
 // ===== LOGIN =====
 app.post("/login", (req, res) => {

@@ -28,11 +28,19 @@ export default function UserModal({
 
     // ===== load user for edit / delete =====
     useEffect(() => {
+        if (isAdd) {
+            setName("");
+            setEmail("");
+            setPassword("");
+            setTargetUser(null);
+        }
         if (!userId) return;
         if (!isEdit && !isDelete) return;
 
         setLoading(true);
+        setErrors({});
         setError("");
+
 
         const loadUser = async () => {
             try {
