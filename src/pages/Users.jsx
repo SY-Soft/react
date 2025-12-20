@@ -3,6 +3,7 @@ import UserModal from "../components/UserModal";
 import {useAuth} from "../AuthContext.jsx";
 import { apiFetch } from "../utils/api.js";
 import { useNotify } from "../context/NotificationContext";
+import { useNavigate } from 'react-router-dom';
 
 export default function Users() {
     const [users, setUsers] = useState([]);
@@ -10,6 +11,7 @@ export default function Users() {
     const modalRef = useRef(null); // не обязательно, но можно
     const API = import.meta.env.VITE_API || "http://localhost:8800";
     const isAdmin = user?.role === 1;
+    const navigate = useNavigate();
 
     const [modalMode, setModalMode] = useState(null);
     const [modalUserId, setModalUserId] = useState(null);
@@ -20,19 +22,21 @@ export default function Users() {
 
     async function loadUsers() {
         try {
-            const res = await fetch(`${API}/users/get_all`);
-            const data = await res.json();
-            setUsers(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error("Load users error", err);
-            setUsers([]);
+            const data = await apiFetch("/users/get_all", {
+                method: "GET",
+            });
+
+            setUsers(data);
+        } catch (e) {
+            notify("Ошибка сервера", "danger");
+            navigate("/");
         }
     }
+
 
     useEffect(() => {
         loadUsers();
     }, []);
-
 
     async function changeRole(userId, newRole) {
         try {
@@ -45,6 +49,11 @@ export default function Users() {
             loadUsers();
 
         } catch (e) {
+            if (e.type === "AUTH") {
+                notify("Сессия истекла. Перезайдите.", "danger");
+                return;
+            }
+
             notify(e.message, "danger");
         }
     }

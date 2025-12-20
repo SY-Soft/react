@@ -12,36 +12,107 @@ const SECRET = "SY_SUPER_SECRET_NE_MENYAT";
 function checkAdmin(req, res, next) {
     const auth = req.headers.authorization;
     if (!auth) {
-        console.log("NO AUTH HEADER");
-        return res.status(401).json({ success: false, error: "No token" });
+        return authFail(res, "Нет токена");
     }
+
     try {
         const token = auth.split(" ")[1];
         const decoded = jwt.verify(token, SECRET);
 
-
-
-        if (decoded.role !== 1 && decoded.id!==req.body.id) {
-            //        console.log("ROLE IS NOT ADMIN:", decoded.role);
-            return res.status(403).json({ success: false, error: "Not admin" });
+        // админ (role === 1) ИЛИ владелец (id совпадает)
+        if (decoded.role !== 1 && decoded.id !== req.body.id) {
+            return fail(res, {
+                type: "AUTH",
+                message: "Недостаточно прав",
+            });
         }
 
         req.user = decoded;
         next();
+
     } catch (e) {
-        console.log("JWT ERROR:", e.message);
-        return res.status(401).json({ success: false, error: "Invalid token" });
+        return authFail(res, "Невалидный или истёкший токен");
     }
 }
 
-
-// ===== USERS GET =====
+app.get("/admin/check", checkAdmin, (req, res) => {
+    return ok(res);
+});
 app.get("/users/get_all", (req, res) => {
-    db.query("SELECT id, name, email, role FROM users", (err, data) => {
-        if (err) return res.json(err);
-        return res.json(data);
+    db.query(
+        "SELECT id, name, email, role FROM users",
+        (err, rows) => {
+            if (err) { return fail(res, { type: "BUSINESS", message: "Ошибка базы данных",});}
+            return ok(res,  rows);
+        }
+    );
+
+});
+app.put("/users/role", checkAdmin, (req, res) => {
+    const { userId, role } = req.body;
+
+    const q = "UPDATE users SET role = ? WHERE id = ?";
+    db.query(q, [role, userId], (err, result) => {
+        if (err) { return fail(res, { type: "BUSINESS", message: "Ошибка базы данных",});}
+        return ok(res);
     });
 });
+app.post("/login", (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return fail(res, {
+            type: "VALIDATION",
+            errors: {
+                email: !email ? "Обязательное поле" : undefined,
+                password: !password ? "Обязательное поле" : undefined,
+            },
+        });
+    }
+
+    const q = "SELECT * FROM users WHERE email = ? AND password = ?";
+    db.query(q, [email, password], (err, rows) => {
+        if (err) { return fail(res, { type: "BUSINESS", message: "Ошибка базы данных",});}
+
+        if (rows.length === 0) {
+            return authFail(res, "Неверный логин или пароль");
+
+        }
+
+        const user = rows[0];
+        const role = user.role;
+
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role },
+            SECRET,
+            { expiresIn: "2h" }
+        );
+
+        return ok(res, {token,user,});
+
+    });
+});
+app.post("/user/get", checkAdmin, (req, res) => {
+    const q = "SELECT id, name, email, role FROM users WHERE id = ?";
+    db.query(q, [req.body.id], (err, data) => {
+        if (err) { return fail(res, { type: "BUSINESS", message: "Ошибка базы данных",});}
+        if (data.length === 0) { return fail(res, { type: "BUSINESS", message: "Пользователь не найден",});}
+        return ok(res,  data[0]);
+    });
+});
+app.delete("/user_delete/:id", (req, res) => {
+    const userId = req.params.id;
+    const q = "DELETE FROM users WHERE id = ?";
+    db.query(q, [userId], (err, data) => {
+        if (err) { return fail(res, { type: "BUSINESS", message: "Ошибка базы данных",});}
+        return ok(res,  userId);
+    });
+});
+
+
+
+/*
+// ===== USERS GET =====
 
 app.post("/user/get", checkAdmin, (req, res) => {
     const q = "SELECT id, name, email, role FROM users WHERE id = ?";
@@ -206,6 +277,41 @@ app.delete("/user_delete/:id", (req, res) => {
 app.get("/admin/check", checkAdmin, (req, res) => {
     res.json({ success: true });
 });
+*/
+
+function ok(res, data = null, message = null) {
+    return res.json({
+        success: true,
+        data,
+        message,
+    });
+}
+
+function fail(res,
+              {
+        type = "BUSINESS",
+        errors = null,
+        message = "Ошибка",
+    } = {})
+{
+    return res.json({
+        success: false,
+        type,
+        errors,
+        message,
+    });
+}
+
+
+function authFail(res, message = "Unauthorized") {
+    return res.json({
+        success: false,
+        type: "AUTH",
+        message,
+    });
+}
+
+
 
 // ===== LISTEN (ДОЛЖНО БЫТЬ ПОСЛЕ ВСЕХ РОУТОВ!) =====
 app.listen(8800, () => {

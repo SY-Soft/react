@@ -88,18 +88,19 @@ export default function UserModal({
                     setPassword("");
                 }
             } catch (e) {
-                console.error("loadUser error1:", e);
+                console.log("loadUser error1:", e);
 
-                // 🔴 JWT умер / нет доступа
+                // JWT умер / нет доступа
                 if (e.type === "AUTH") {
                     setError("Сессия истекла. Перезайдите.");
                     notify("Сессия истекла. Перезайдите.", "danger");
-                    onClose(); // закрываем модалку
+                    onClose();
                     return;
                 }
 
                 setError("Ошибка загрузки пользователя");
                 notify("Ошибка загрузки пользователя", "danger");
+                onClose();
             } finally {
                 setLoading(false);
             }
