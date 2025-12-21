@@ -175,7 +175,7 @@ export default function UserModal({
             onClose();
 
         } catch (e) {
-            if (e.type === "BUSINESS") {
+            if (e.type === "BUSINESS" || e.type === "VALIDATION" ) {
                 setErrors(e.errors || {});
                 return;
             }

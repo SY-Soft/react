@@ -109,6 +109,105 @@ app.delete("/user_delete/:id", (req, res) => {
     });
 });
 
+app.post("/users/save", async (req, res) => {
+    const { id, name, email, password } = req.body;
+
+    // ===== validation =====
+    const errors = {};
+
+    if (!name || name.length < 3) {
+        errors.name = "Имя минимум 3 символа";
+    }
+
+    if (!email) {
+        errors.email = "Email обязателен";
+    }
+
+    if (Object.keys(errors).length) {
+        return fail(res, {
+            type: "VALIDATION",
+            errors,
+        });
+    }
+
+    try {
+        // ===== unique email =====
+        const isUnique = await checkEmailUnique(email, id);
+
+        if (!isUnique) {
+            return fail(res, {
+                type: "VALIDATION",
+                errors: {
+                    email: "Пользователь с таким email уже существует",
+                },
+            });
+        }
+
+        // ===== save =====
+        if (id) {
+            // EDIT
+            let sql = "UPDATE users SET name=?, email=?";
+            const params = [name, email];
+
+            if (password) {
+                sql += ", password=?";
+                params.push(password);
+            }
+
+            sql += " WHERE id=?";
+            params.push(id);
+
+            await new Promise((resolve, reject) => {
+                db.query(sql, params, err => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+
+        } else {
+            // ADD
+            const sql =
+                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+
+            await new Promise((resolve, reject) => {
+                db.query(sql, [name, email, password], err => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+        }
+
+        return ok(res);
+
+    } catch (err) {
+        return fail(res, {
+            type: "BUSINESS",
+            message: "Ошибка базы данных",
+        });
+    }
+});
+
+function checkEmailUnique(email, excludeId = null) {
+    return new Promise((resolve, reject) => {
+        const sql = excludeId
+            ? "SELECT id FROM users WHERE email = ? AND id <> ?"
+            : "SELECT id FROM users WHERE email = ?";
+
+        const params = excludeId ? [email, excludeId] : [email];
+
+        db.query(sql, params, (err, rows) => {
+            if (err) {
+                return reject(new Error("DB_ERROR"));
+            }
+
+            if (rows.length > 0) {
+                return resolve(false); // ❗ не reject
+            }
+
+            resolve(true);
+        });
+    });
+}
 
 
 /*
