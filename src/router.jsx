@@ -4,6 +4,7 @@ import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import Users from "./pages/Users";
 import About from "./pages/About";
+import More_details from "./pages/More_details";
 import Login from "./pages/Login.jsx";
 // import AddUser from "./pages/AddUser";
 
@@ -13,8 +14,9 @@ const router = createBrowserRouter([
         element: <MainLayout />,    // ← Layout со шапкой
         children: [
             { path: "/", element: <Home /> },
-            { path: "/users", element: <Users /> },
+            { path: "/more_details", element: <More_details /> },
             { path: "/about", element: <About /> },
+            { path: "/users", element: <Users /> },
             { path: "/login", element: <Login /> },
 /*            { path: "/add", element: <AddUser /> }, */
         ]

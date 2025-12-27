@@ -19,8 +19,9 @@ export default function Header() {
                 )}
                 <div className="navbar-nav">
                     <Link className="nav-link" to="/">Главная</Link>
+                    <Link className="nav-link" to="/more_details">Подробнее</Link>
+                    <Link className="nav-link" to="/about">О проекте</Link>
                     <Link className="nav-link" to="/users">Юзеры</Link>
-                    <Link className="nav-link" to="/about">О нас</Link>
                     {user ? (
                         <Link className="nav-link sy-link-ico" onClick={logout}><i className="bi bi-box-arrow-right"></i></Link>
                     ) : (
