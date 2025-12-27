@@ -6,19 +6,17 @@ import Users from "./pages/Users";
 import About from "./pages/About";
 import More_details from "./pages/More_details";
 import Login from "./pages/Login.jsx";
-// import AddUser from "./pages/AddUser";
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <MainLayout />,    // ← Layout со шапкой
+        element: <MainLayout />,
         children: [
             { path: "/", element: <Home /> },
             { path: "/more_details", element: <More_details /> },
             { path: "/about", element: <About /> },
             { path: "/users", element: <Users /> },
             { path: "/login", element: <Login /> },
-/*            { path: "/add", element: <AddUser /> }, */
         ]
     }
 ]);
