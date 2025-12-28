@@ -28,7 +28,7 @@ export default function Users() {
 
             setUsers(data);
         } catch (e) {
-            notify("Ошибка сервера", "danger");
+            notify("Ошибка сервера REM loadUsers", "danger");
             navigate("/");
         }
     }
